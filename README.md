@@ -11,30 +11,28 @@ tensorflow-datasets
 
 Datasets
 ---
-**ImageNet-S** is a subset of **ImageNet-1K** with random selected 100 classes from original 1000 classes. To run the code, follow the instruction [here](https://github.com/Optimization-AI/sogclr/tree/main/dataset) to convert dataset to tfrecord. The tfrecord file should contain the following features: `image`, `label`, `ID`, such as:
+**ImageNet-S** is a subset of **ImageNet-1K** with random selected 100 classes from original 1000 classes. You could follow the instruction [here](https://github.com/Optimization-AI/sogclr/tree/main/dataset) to convert dataset to tfrecord. To run SogCLR, we need image IDs to track the running statistics and each tfrecord should contain the following features: `image`, `label`, `ID`, such as:
 
 ```Python
 features=tfds.features.FeaturesDict({
             'image/encoded': tfds.features.Image(encoding_format='jpeg'),
             'image/class/label': tfds.features.ClassLabel(names_file=names_file),
-            'image/ID': tf.int64,  # eg: 0,1,2,3,4,...
+            'image/ID': tf.int64,  # eg: 0,1,2,3,4,...,N
         })
 ```
 
-
-#### Usage
 Copy the provided `/code/imagenet.py` to your local directory under `tensorflow_datasets`:
 ```bash
 cp imagenet.py  /usr/local/lib/python3.7/dist-packages/tensorflow_datasets/image_classification/imagenet.py 
 ```
 Specify the `num_classes` and `data_dir`:
-- ImageNet-S: `--num_classes=100 --data_dir=gs://<path-to-tensorflow-dataset>`
-- ImageNet-1K: `--num_classes=1000 --data_dir=gs://<path-to-tensorflow-dataset>`
+- **ImageNet-S**: --num_classes=100 --data_dir=gs://\<path-to-tensorflow-dataset\>
+- **ImageNet-1K**: --num_classes=1000 --data_dir=gs://\<path-to-tensorflow-dataset\>
 
 
 Pretraining
 ---
-To pretrain the `ResNet50` on `ImageNet-1K` with TPUs using **SogCLR**, run the following command:
+To pretrain the **ResNet50** on **ImageNet-1K** using **SogCLR** with TPUs, you could set `BI_mode=True` and `gamma=0.9` and then run the following command:
 ```bash
 python run.py --train_mode=pretrain \
   --train_batch_size=512 --train_epochs=800 --temperature=0.1 \
@@ -46,7 +44,7 @@ python run.py --train_mode=pretrain \
   --model_dir=gs://<path-to-store-checkpoints>\
   --use_tpu=True
 ```
-For baselines, you could set `BI_mode=False` to use SimCLR. To use GPU, you could set `use_tpu=False`. 
+For baselines, you could set `BI_mode=False` to use SimCLR. To use a 3-layer MLP projection head, you could set `num_proj_layers=3`. To use larger ResNet models, you could set `width_multiplier=1,2,4` and/or `resnet_depth=50,101,152`. To use GPU, you could set `use_tpu=False`. 
 
 Linear Evaluation
 ---
@@ -82,4 +80,6 @@ If you find this repo helpful, please cite the following paper:
 Reference
 ---
 - https://github.com/google-research/simclr/tree/master/tf2
-- https://github.com/wuyuebupt/LargeScaleIncrementalLearning/tree/master/dataImageNet100
+- https://github.com/tensorflow/models/tree/master/research/slim
+- https://github.com/wuyuebupt/LargeScaleIncrementalLearning/tree/master/dataImageNet10
+            
