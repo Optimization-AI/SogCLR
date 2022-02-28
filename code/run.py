@@ -626,12 +626,6 @@ def main(argv):
         for metric in all_metrics:
           metric.reset_states() 
           
-        # evaluation
-        # This function may cause crash when running in Colab using batch size >=512, on only allow it on finetuning linear head or batch size < 512
-        if FLAGS.train_batch_size < 512 or FLAGS.train_mode == 'finetune': # prevent TPU crash during training 
-            perform_evaluation(model, cur_step, builder, eval_steps, checkpoint_manager.latest_checkpoint, strategy, topology, summary_writer)
-            summary_writer.flush()
-        
       # finsih all trainings   
       if FLAGS.train_batch_size >= 512:
           perform_evaluation(model, cur_step, builder, eval_steps, checkpoint_manager.latest_checkpoint, strategy, topology, summary_writer)
