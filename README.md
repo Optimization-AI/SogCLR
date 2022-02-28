@@ -1,6 +1,6 @@
 # SogCLR [![pdf](https://img.shields.io/badge/Arxiv-pdf-orange.svg?style=flat)](https://arxiv.org/pdf/2202.12387.pdf)
 
-This is the official implementation of the paper "**Provable Stochastic Optimization for Global Contrastive Learning: Small Batch Does Not Harm Performance**". Our algorithm allows one to train SimCLR models with smaller batch sizes. The code can be run on TPU or GPU. 
+This is the official implementation of the paper "**Provable Stochastic Optimization for Global Contrastive Learning: Small Batch Does Not Harm Performance**". Our algorithm can train self-supervised models with smaller batch sizes. The code can be run on TPU or GPU. 
 
 Requirements
 ---
