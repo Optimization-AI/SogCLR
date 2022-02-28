@@ -141,7 +141,7 @@ class Imagenet2012(tfds.core.GeneratorBasedBuilder):
       tfds.core.Version('5.0.0'),
   ]
   RELEASE_NOTES = {
-      '5.2.0': 'Add ID for each image',    
+      '5.2.0': 'Added ID for each image',    
       '5.1.0': 'Added test split.',
       '5.0.0': 'New split API (https://tensorflow.org/datasets/splits)',
       '4.0.0': '(unpublished)',
