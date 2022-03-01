@@ -253,10 +253,6 @@ flags.DEFINE_float(
     'gamma', 0.99,
     'Moving average for BI Loss')
 
-flags.DEFINE_integer(
-    'version', 0,
-    '0: no sum on moving, 1: sum on moving')
-
 def get_salient_tensors_dict(include_projection_head):
   """Returns a dictionary of tensors."""
   graph = tf.compat.v1.get_default_graph()
@@ -625,8 +621,12 @@ def main(argv):
           
         for metric in all_metrics:
           metric.reset_states() 
+        
+        # run evalation after every epoch 
+        #perform_evaluation(model, cur_step, builder, eval_steps, checkpoint_manager.latest_checkpoint, strategy, topology, summary_writer)
+        #summary_writer.flush()
           
-      # finsih all trainings   
+      # evaluation after finsihing all trainings   
       if FLAGS.train_batch_size >= 512:
           perform_evaluation(model, cur_step, builder, eval_steps, checkpoint_manager.latest_checkpoint, strategy, topology, summary_writer)
           summary_writer.flush()
