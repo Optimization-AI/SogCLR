@@ -1,6 +1,6 @@
 # SogCLR [![pdf](https://img.shields.io/badge/Arxiv-pdf-orange.svg?style=flat)](https://arxiv.org/pdf/2202.12387.pdf)
 
-This is the official implementation of the paper "**Provable Stochastic Optimization for Global Contrastive Learning: Small Batch Does Not Harm Performance**". Our algorithm can train self-supervised models with smaller batch sizes. The code can be run on TPU or GPU. 
+This is the official implementation of the paper "**Provable Stochastic Optimization for Global Contrastive Learning: Small Batch Does Not Harm Performance**". Our algorithm can train self-supervised models with smaller batch sizes. The code can be run on TPUs or GPUs. 
 
 Requirements
 ---
@@ -41,10 +41,10 @@ python run.py --train_mode=pretrain \
   --num_proj_layers=2 \
   --BI_mode=True --gamma=0.9  \
   --data_dir=gs://<path-to-tensorflow-dataset> \
-  --model_dir=gs://<path-to-store-checkpoints>\
+  --model_dir=gs://<path-to-store-checkpoints> \
   --use_tpu=True
 ```
-For baselines, you could set `BI_mode=False` to use SimCLR. To use a 3-layer MLP projection head, you could set `num_proj_layers=3`. To use larger ResNet models, you could set `width_multiplier=1,2,4` and/or `resnet_depth=50,101,152`. To use GPU, you could set `use_tpu=False`. 
+For baseline, you could set `BI_mode=False` to use SimCLR. To use a 3-layer MLP projection head, you could set `num_proj_layers=3`. To use larger ResNet models, you could set `width_multiplier=1,2,4` and/or `resnet_depth=50,101,152`. To use GPU, you could set `use_tpu=False`. 
 
 Linear Evaluation
 ---
@@ -80,6 +80,7 @@ If you find this repo helpful, please cite the following paper:
 Reference
 ---
 - https://github.com/google-research/simclr/tree/master/tf2
-- https://github.com/tensorflow/models/tree/master/research/slim
 - https://github.com/wuyuebupt/LargeScaleIncrementalLearning/tree/master/dataImageNet10
+- https://cloud.google.com/tpu/docs/tutorials/mnist
+
             
