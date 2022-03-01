@@ -170,14 +170,14 @@ class BatchIndependentLoss(tf.losses.Loss):
       p_neg_weights1 = tf.stop_gradient(p_neg_weights1)
       p_neg_weights2 = tf.stop_gradient(p_neg_weights2)
       
-      def softmax_cross_entropy_with_logits(labels, logits, neg_mask, weights):
+      def softmax_cross_entropy_with_logits(labels, logits, weights):
           scaled_logits = logits
-          expsum_neg_logits =  tf.reduce_sum(weights*scaled_logits*neg_mask, axis=1, keepdims=True)/tf.cast(2*(batch_size-1), tf.float32)
+          expsum_neg_logits =  tf.reduce_sum(weights*scaled_logits, axis=1, keepdims=True)/tf.cast(2*(batch_size-1), tf.float32)
           normalized_logits = scaled_logits - expsum_neg_logits
           return -tf.reduce_sum(labels * normalized_logits, axis=1)
       
-      loss_a = softmax_cross_entropy_with_logits(labels, logits_ab_aa, neg_mask, p_neg_weights1)
-      loss_b = softmax_cross_entropy_with_logits(labels, logits_ba_bb, neg_mask, p_neg_weights2)
+      loss_a = softmax_cross_entropy_with_logits(labels, logits_ab_aa, p_neg_weights1)
+      loss_b = softmax_cross_entropy_with_logits(labels, logits_ba_bb, p_neg_weights2)
       loss = tf.reduce_mean(loss_a + loss_b)
 
       return loss, logits_ab, labels
