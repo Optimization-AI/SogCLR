@@ -80,7 +80,6 @@ If you find this repo helpful, please cite the following paper:
 Reference
 ---
 - https://github.com/google-research/simclr/tree/master/tf2
-- https://github.com/wuyuebupt/LargeScaleIncrementalLearning/tree/master/dataImageNet10
 - https://cloud.google.com/tpu/docs/tutorials/mnist
 
             
