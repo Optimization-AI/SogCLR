@@ -246,7 +246,7 @@ flags.DEFINE_boolean(
 
 # added here 
 flags.DEFINE_boolean(
-    'BI_mode', False,
+    'GCL_mode', False,
     'Use Batch Independent Loss for training')
 
 flags.DEFINE_float(
@@ -491,8 +491,8 @@ def main(argv):
 
   with strategy.scope():
     model = model_lib.Model(num_classes)
-    if FLAGS.BI_mode:
-        BI_Loss = obj_lib.BatchIndependentLoss(N=num_train_examples)
+    if FLAGS.GCL_mode:
+        GCL_Loss = obj_lib.GlobalConstrastiveLoss(N=num_train_examples)
 
   if FLAGS.mode == 'eval':
       # check latest checkpoint 
@@ -540,8 +540,8 @@ def main(argv):
         loss = None
         if projection_head_outputs is not None:
           outputs = projection_head_outputs
-          if FLAGS.BI_mode:
-              con_loss, logits_con, labels_con = BI_Loss(
+          if FLAGS.GCL_mode:
+              con_loss, logits_con, labels_con = GCL_Loss(
                                                   outputs,
                                                   index,
                                                   FLAGS.gamma,
