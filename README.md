@@ -11,7 +11,7 @@ tensorflow-datasets
 
 Datasets
 ---
-**ImageNet-S** is a subset of **ImageNet-1K** with random selected 100 classes from original 1000 classes. You could follow the instruction [here](https://github.com/Optimization-AI/sogclr/tree/main/dataset) to convert dataset to tfrecord. To run SogCLR, we need image IDs to track the running statistics and each tfrecord should contain the following features: `image`, `label`, `ID`, such as:
+**ImageNet-S** is a subset of **ImageNet-1K** with random selected 100 classes from original 1000 classes. You could follow the instruction [here](https://github.com/Optimization-AI/sogclr/tree/main/dataset) to convert dataset to tfrecord. To run SogCLR, we need image IDs to track the running statistics and each tfrecord should contain the following features: **image**, **label**, **id**, such as:
 
 ```Python
 features=tfds.features.FeaturesDict({
@@ -26,20 +26,20 @@ Copy the provided `/code/imagenet.py` to your local directory under `tensorflow_
 cp imagenet.py  /usr/local/lib/python3.7/dist-packages/tensorflow_datasets/image_classification/imagenet.py 
 ```
 Specify the `num_classes` and `data_dir`:
-- **ImageNet-S**: --num_classes=100 --data_dir=gs://\<path-to-tensorflow-dataset\>
-- **ImageNet-1K**: --num_classes=1000 --data_dir=gs://\<path-to-tensorflow-dataset\>
+- ImageNet-S: --num_classes=100 --data_dir=gs://\<path-to-tensorflow-dataset\>
+- ImageNet-1K: --num_classes=1000 --data_dir=gs://\<path-to-tensorflow-dataset\>
 
 
 Pretraining
 ---
-To pretrain the **ResNet50** on **ImageNet-1K** using **SogCLR** with TPUs, you could set `BI_mode=True` and `gamma=0.9` and then run the following command:
+To pretrain the ResNet50 on ImageNet-1K using **SogCLR** + **GlobalConstrastiveLoss** with TPUs, you could set `GCL_mode=True` and `gamma=0.9` and then run the following command:
 ```bash
 python run.py --train_mode=pretrain \
   --train_batch_size=512 --train_epochs=800 --temperature=0.1 \
   --learning_rate=0.075 --learning_rate_scaling=sqrt --weight_decay=1e-6 \
   --dataset=imagenet2012 --image_size=224 --eval_split=validation --num_classes=1000 \
   --num_proj_layers=2 \
-  --BI_mode=True --gamma=0.9  \
+  --GCL_mode=True --gamma=0.9  \
   --data_dir=gs://<path-to-tensorflow-dataset> \
   --model_dir=gs://<path-to-store-checkpoints> \
   --use_tpu=True
