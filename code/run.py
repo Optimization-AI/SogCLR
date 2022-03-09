@@ -251,7 +251,7 @@ flags.DEFINE_boolean(
 
 flags.DEFINE_float(
     'gamma', 0.99,
-    'Moving average for BI Loss')
+    'Moving average for GCL Loss')
 
 def get_salient_tensors_dict(include_projection_head):
   """Returns a dictionary of tensors."""
