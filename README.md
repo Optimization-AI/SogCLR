@@ -1,4 +1,4 @@
-# SogCLR [![pdf](https://img.shields.io/badge/Arxiv-pdf-orange.svg?style=flat)](https://arxiv.org/pdf/2202.12387.pdf)
+# SogCLR [![pdf](https://img.shields.io/badge/Arxiv-pdf-orange.svg?style=flat)](https://proceedings.mlr.press/v162/yuan22b/yuan22b.pdf)
 
 This is the official implementation of the paper "**Provable Stochastic Optimization for Global Contrastive Learning: Small Batch Does Not Harm Performance**". Our algorithm can train self-supervised models with smaller batch sizes. The code can be run on TPUs or GPUs. 
 
@@ -69,11 +69,13 @@ Citation
 If you find this repo helpful, please cite the following paper:
 
 ```
-@article{yuan2022sogclr,
-  title={Provable Stochastic Optimization for Global Contrastive Learning: Small Batch Does Not Harm Performance},
-  author={Zhuoning Yuan, Yuexin Wu, Zihao Qiu, Xianzhi Du, Lijun Zhang, Denny Zhou, Tianbao Yang},
-  journal={arXiv preprint arXiv:2202.12387},
-  year={2022}
+@inproceedings{yuan2022provable,
+  title={Provable stochastic optimization for global contrastive learning: Small batch does not harm performance},
+  author={Yuan, Zhuoning and Wu, Yuexin and Qiu, Zi-Hao and Du, Xianzhi and Zhang, Lijun and Zhou, Denny and Yang, Tianbao},
+  booktitle={International Conference on Machine Learning},
+  pages={25760--25782},
+  year={2022},
+  organization={PMLR}
 }
 ```
 
