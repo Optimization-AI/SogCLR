@@ -492,7 +492,7 @@ def main(argv):
   with strategy.scope():
     model = model_lib.Model(num_classes)
     if FLAGS.DCL_mode:
-        DCL_Loss = obj_lib.GlobalConstrastiveLoss(N=num_train_examples)
+        DCL_Loss = obj_lib.DynamicConstrastiveLoss(N=num_train_examples)
 
   if FLAGS.mode == 'eval':
       # check latest checkpoint 
