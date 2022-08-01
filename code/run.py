@@ -246,12 +246,12 @@ flags.DEFINE_boolean(
 
 # added here 
 flags.DEFINE_boolean(
-    'GCL_mode', False,
+    'DCL_mode', False,
     'Use Batch Independent Loss for training')
 
 flags.DEFINE_float(
     'gamma', 0.99,
-    'Moving average for GCL Loss')
+    'Moving average for DCL Loss')
 
 def get_salient_tensors_dict(include_projection_head):
   """Returns a dictionary of tensors."""
@@ -491,8 +491,8 @@ def main(argv):
 
   with strategy.scope():
     model = model_lib.Model(num_classes)
-    if FLAGS.GCL_mode:
-        GCL_Loss = obj_lib.GlobalConstrastiveLoss(N=num_train_examples)
+    if FLAGS.DCL_mode:
+        DCL_Loss = obj_lib.GlobalConstrastiveLoss(N=num_train_examples)
 
   if FLAGS.mode == 'eval':
       # check latest checkpoint 
@@ -540,8 +540,8 @@ def main(argv):
         loss = None
         if projection_head_outputs is not None:
           outputs = projection_head_outputs
-          if FLAGS.GCL_mode:
-              con_loss, logits_con, labels_con = GCL_Loss(
+          if FLAGS.DCL_mode:
+              con_loss, logits_con, labels_con = DCL_Loss(
                                                   outputs,
                                                   index,
                                                   FLAGS.gamma,
