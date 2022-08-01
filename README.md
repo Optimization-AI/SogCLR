@@ -1,4 +1,4 @@
-# SogCLR [![pdf](https://img.shields.io/badge/Arxiv-pdf-orange.svg?style=flat)](https://proceedings.mlr.press/v162/yuan22b/yuan22b.pdf)
+# SogCLR [![pdf](https://img.shields.io/badge/Arxiv-pdf-orange.svg?style=flat)](https://arxiv.org/pdf/2202.12387.pdf)
 
 This is the official implementation of the paper "**Provable Stochastic Optimization for Global Contrastive Learning: Small Batch Does Not Harm Performance**". Our algorithm can train self-supervised models with smaller batch sizes. The code can be run on TPUs or GPUs. 
 
@@ -32,14 +32,14 @@ Specify the `num_classes` and `data_dir`:
 
 Pretraining
 ---
-To pretrain the ResNet50 on ImageNet-1K using **SogCLR** + **GlobalConstrastiveLoss** with TPUs, you could set `GCL_mode=True` and `gamma=0.9` and then run the following command:
+To pretrain the ResNet50 on ImageNet-1K using **SogCLR** + **Dynamic Contrastive Loss** with TPUs, you could set `GCL_mode=True` and `gamma=0.9` and then run the following command:
 ```bash
 python run.py --train_mode=pretrain \
   --train_batch_size=512 --train_epochs=800 --temperature=0.1 \
   --learning_rate=0.075 --learning_rate_scaling=sqrt --weight_decay=1e-6 \
   --dataset=imagenet2012 --image_size=224 --eval_split=validation --num_classes=1000 \
   --num_proj_layers=2 \
-  --GCL_mode=True --gamma=0.9  \
+  --DCL_mode=True --gamma=0.9  \
   --data_dir=gs://<path-to-tensorflow-dataset> \
   --model_dir=gs://<path-to-store-checkpoints> \
   --use_tpu=True
