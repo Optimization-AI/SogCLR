@@ -87,7 +87,7 @@ def add_contrastive_loss(hidden,
   return loss, logits_ab, labels
 
 
-class GlobalConstrastiveLoss(tf.losses.Loss):
+class DynamicConstrastiveLoss(tf.losses.Loss):
     def __init__(self, N=1500000):
         self.u = tf.Variable([[0.0]]*N, trainable=False)
     
@@ -223,5 +223,4 @@ def tpu_cross_replica_concat(tensor, strategy=None):
 if __name__ == '__main__':
     import numpy as np
     batch_size = 512
-    BILoss = BatchIndependentLoss(N=100000)
  
