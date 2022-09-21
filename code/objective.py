@@ -87,7 +87,7 @@ def add_contrastive_loss(hidden,
   return loss, logits_ab, labels
 
 
-class DynamicConstrastiveLoss(tf.losses.Loss):
+class DynamicContrastiveLoss(tf.losses.Loss):
     def __init__(self, N=1500000):
         self.u = tf.Variable([[0.0]]*N, trainable=False)
     
