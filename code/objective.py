@@ -162,7 +162,7 @@ class DynamicContrastiveLoss(tf.losses.Loss):
          data_index_large = tpu_cross_replica_concat(data_index, strategy)
          self.u.assign(tf.tensor_scatter_nd_update(self.u, tf.reshape(data_index_large, (-1, 1)), u_i1_large+u_i2_large)) 
       else:
-        self.u.assign(tf.tensor_scatter_nd_update(self.u, tf.reshape(data_index (-1, 1)), u_i1+u_i2)) 
+        self.u.assign(tf.tensor_scatter_nd_update(self.u, tf.reshape(data_index, (-1, 1)), u_i1+u_i2)) 
 
       p_neg_weights1 = tf.squeeze(neg_logits1/u_i1)
       p_neg_weights2 = tf.squeeze(neg_logits2/u_i2)
