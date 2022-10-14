@@ -1,6 +1,6 @@
 # SogCLR PyTorch Implementation
 
-In this repo, you will learn how to train a self-supervised model by using [Global Contrastive Loss](https://arxiv.org/abs/2202.12387) (GCL) on CIFAR10/CIFAR100. The original GCL was implementated in Tensorflow and run in TPUs. This tutorial re-implements GCL in PyTorch and GPUs based on [moco's](https://github.com/facebookresearch/moco) codebase. We recommend users to run this notebook on a GPU-enabled environment, e.g., [Google Colab](https://colab.research.google.com/). 
+In this repo, you will learn how to train a self-supervised model by using [Global Contrastive Loss](https://arxiv.org/abs/2202.12387) (GCL) on CIFAR10/CIFAR100. The original GCL was implementated in Tensorflow and run in TPUs. This repo re-implements GCL in PyTorch and GPUs based on [moco's](https://github.com/facebookresearch/moco) codebase. We recommend users to run this notebook on a GPU-enabled environment, e.g., [Google Colab](https://colab.research.google.com/). 
 
 
 ## Installation
@@ -32,7 +32,7 @@ python train.py \
 ```
 
 ### Linear evaluation
-By default, we use momentum-SGD without weight decay and a batch size of 1024 for linear classification on frozen features/weights. In this stage, it runs 90 epochs.
+By default, we use momentum-SGD without weight decay and a batch size of 1024 for linear evaluation on on frozen features/weights. In this stage, it runs 90 epochs for training.
 
 **CIFAR**
 
