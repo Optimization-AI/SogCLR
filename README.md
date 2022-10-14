@@ -16,7 +16,7 @@ Below is an example for self-supervised pre-training of a ResNet-50 model on CIF
 
 **CIFAR**
 
-By default, we use batch size of 32 and train 400 epochs. You can increase the number of workers to accelerate the training speed.
+We use batch size of 64 and train 400 epochs for pretraining. You can also increase the number of workers to accelerate the training speed.
 
 ```bash
 python train.py \
@@ -32,7 +32,7 @@ python train.py \
 ```
 
 ### Linear evaluation
-By default, we use momentum-SGD without weight decay and a batch size of 1024 for linear classification on frozen features/weights. In this stage, it takes 90 epochs to complete.
+By default, we use momentum-SGD without weight decay and a batch size of 1024 for linear classification on frozen features/weights. In this stage, it runs 90 epochs.
 
 **CIFAR**
 
