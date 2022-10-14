@@ -1,6 +1,6 @@
 # SogCLR PyTorch Implementation
 
-In this repo, you will learn how to train a self-supervised model by optimizing [Global Contrastive Loss](https://arxiv.org/abs/2202.12387) (GCL) on CIFAR10/CIFAR100. The original GCL was implementated in Tensorflow and run in TPUs. This tutorial re-implements GCL in PyTorch and GPUs based on [moco's](https://github.com/facebookresearch/moco) codebase. We recommend users to run this notebook on a GPU-enabled environment, e.g., [Google Colab](https://colab.research.google.com/). 
+In this repo, you will learn how to train a self-supervised model by using [Global Contrastive Loss](https://arxiv.org/abs/2202.12387) (GCL) on CIFAR10/CIFAR100. The original GCL was implementated in Tensorflow and run in TPUs. This tutorial re-implements GCL in PyTorch and GPUs based on [moco's](https://github.com/facebookresearch/moco) codebase. We recommend users to run this notebook on a GPU-enabled environment, e.g., [Google Colab](https://colab.research.google.com/). 
 
 
 ## Installation
@@ -11,17 +11,17 @@ git clone -b cifar https://github.com/Optimization-AI/SogCLR.git
 ```
 
 ### Training  
-Below is an example for self-supervised pre-training of a ResNet-50 model on CIFAR10 on a single GPU. The first time you run the scripts, datasets will be automatically downloaded to `/data/`. By default, we use linear learning rate scaling, e.g., $\text{LearningRate}=1.0\times\text{BatchSize}/256$, [LARS](https://arxiv.org/abs/1708.03888) optimizer and a weight decay of 1e-4. For temperature parameter $\tau$, we use a fixed value of 0.3. For DCL, gamma (λ) is an additional parameter for maintaining moving average estimator, the default value is 0.9. By default, the dataset is set to `CIFAR10`. To pretrain on CIFAR100, you can set `--data_name cifar100`. In this codebase, only CIFAR10/CIFAR100 is supported, however, you can modify the dataloader to support other datasets.
-
+Below is an example for self-supervised pre-training of a ResNet-50 model on CIFAR10 on a single GPU. The first time you run the scripts, datasets will be automatically downloaded to `/data/`. By default, we use linear learning rate scaling, e.g., $\text{LearningRate}=1.0\times\text{BatchSize}/256$, [LARS](https://arxiv.org/abs/1708.03888) optimizer and a weight decay of 1e-4. For temperature parameter $\tau$, we use a fixed value of 0.3. For DCL, gamma (γ in the paper) is an additional parameter for maintaining moving average estimator, the default value is 0.9. By default, `CIFAR10` is used for experiments. To pretrain on CIFAR100, you can set `--data_name cifar100`. In this repo, only `CIFAR10/CIFAR100` is supported, however, you can modify the dataloader to support other datasets.
 
 
 **CIFAR**
+
 By default, we use batch size of 32 and train 400 epochs. You can increase the number of workers to accelerate the training speed.
 
 ```bash
 python train.py \
   --lr=1.0 --learning-rate-scaling=sqrt \
-  --epochs=100 --batch-size=linear \
+  --epochs=400 --batch-size=64 \
   --loss_type dcl \
   --gamma 0.9 \
   --workers 32 \
@@ -35,6 +35,7 @@ python train.py \
 By default, we use momentum-SGD without weight decay and a batch size of 1024 for linear classification on frozen features/weights. In this stage, it takes 90 epochs to complete.
 
 **CIFAR**
+
 ```bash
 python lincls.py \
   --workers 32 \
