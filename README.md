@@ -37,7 +37,7 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 python train.py \
 
 **ImageNet100**
 
-We also used a small version of ImageNet1K for experiments, i.e., ImageNet-S is a subset with random selected 100 classes from original 1000 classes. To contrust the dataset, please follow these steps:
+We also used a small version of ImageNet1K for experiments, i.e., ImageNet-100 is a subset with random selected 100 classes from original 1000 classes. To contrust the dataset, please follow these steps:
 * Download the train and validation datasets from [ImageNet1K](https://image-net.org/challenges/LSVRC/2012/) website
 * Run this [script](https://raw.githubusercontent.com/soumith/imagenetloader.torch/master/valprep.sh) to create/move all validation images to each category (class) folder
 * Copy images from [train/val.txt](https://github.com/Optimization-AI/SogCLR/blob/main/dataset/ImageNet-S/train.txt) to generate ImageNet-100
@@ -85,7 +85,7 @@ The following results are linear evaluation accuracy on **ImageNet1K** validatio
 | SogCLR (TF[^2]) | 256   |   800 | 69.3 |
 
 
-The following results are linear evaluation accuracy on **ImageNet-S** validation data using the above training configuration.
+The following results are linear evaluation accuracy on **ImageNet-100** validation data using the above training configuration.
 
 | Method | BatchSize |Epoch | Linear eval. |
 |:----------:|:--------:|:--------:|:--------:|
