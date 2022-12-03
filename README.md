@@ -63,7 +63,7 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 python train.py \
 ### Linear evaluation
 By default, we use momentum-SGD without weight decay and a batch size of 1024 for linear evaluation on on frozen features/weights. In this stage, it runs 90 epochs for re-training the classifiers.
 
-**ImageNert**
+**ImageNet**
 
 ```bash
 python lincls.py \
@@ -94,6 +94,11 @@ The following results are linear evaluation accuracy on **ImageNet-S** validatio
 | SogCLR (TF**) | 256   |   400 | 78.7 |
 
 *PyTorch (PT) implementation is based on [moco's](https://github.com/facebookresearch/moco) codebase and Tensorflow (TF) implementation is based on [SimCLR's](https://github.com/google-research/simclr/tree/master/tf2) codebase.
+
+The following figure is the comparsion of SogCLR and SimCLR using different batch sizes. 
+
+<img src="https://raw.githubusercontent.com/Optimization-AI/SogCLR/Tensorflow/imgs/sogclr_batch_size.png" width="308" height="216">
+
 
 ### Reference
 If you find this tutorial helpful, please cite our paper:
