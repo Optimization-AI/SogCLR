@@ -49,7 +49,7 @@ python lincls.py \
 
 ## Benchmarks
 
-The following results are linear evaluation accuracy on ImageNet1K validation dataset for the above setting. 
+The following results are linear evaluation accuracy on ImageNet1K validation data using the above training configuration. 
 
 | Method | BatchSize |Epoch | Linear eval. |
 |:----------:|:--------:|:--------:|:--------:|
