@@ -93,10 +93,10 @@ The following results are linear evaluation accuracy on **ImageNet-S** validatio
 | SogCLR (PT[^1]) | 256   |   400 | 80.0 |
 | SogCLR (TF[^2]) | 256   |   400 | 78.7 |
 
-[^1]: PyTorch (PT) implementation is based on [moco's](https://github.com/facebookresearch/moco) codebase.
-[^2]: Tensorflow (TF) implementation is based on [SimCLR's](https://github.com/google-research/simclr/tree/master/tf2) codebase.
+[^1]:PyTorch (PT) implementation is based on [moco's](https://github.com/facebookresearch/moco) codebase.
+[^2]:Tensorflow (TF) implementation is based on [SimCLR's](https://github.com/google-research/simclr/tree/master/tf2) codebase.
 
-The following results are the comparsion of SogCLR and SimCLR using different batch sizes for 800-epoch pretraining using a batch size of 256 on ImageNet-1K. 
+The following results are the comparsion of SogCLR and SimCLR using different batch sizes for 800-epoch pretraining on ImageNet-1K. 
 
 <img src="https://raw.githubusercontent.com/Optimization-AI/SogCLR/Tensorflow/imgs/sogclr_batch_size.png" width="383" height="238">
 
