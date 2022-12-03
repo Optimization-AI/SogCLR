@@ -80,7 +80,7 @@ The following results are linear evaluation accuracy on **ImageNet1K** validatio
 
 | Method | BatchSize |Epoch | Linear eval. |
 |:----------:|:--------:|:--------:|:--------:|
-| SimCLR | 256   |   800 | 66.5 |
+| SimCLR (TF[^2]) | 256   |   800 | 66.5 |
 | SogCLR (PT[^1]) | 256   |   800 | 68.4 |
 | SogCLR (TF[^2]) | 256   |   800 | 69.3 |
 
@@ -89,7 +89,7 @@ The following results are linear evaluation accuracy on **ImageNet-100** validat
 
 | Method | BatchSize |Epoch | Linear eval. |
 |:----------:|:--------:|:--------:|:--------:|
-| SimCLR | 256   |   400 | 76.1 |
+| SimCLR (TF[^2]) | 256   |   400 | 76.1 |
 | SogCLR (PT[^1]) | 256   |   400 | 80.0 |
 | SogCLR (TF[^2]) | 256   |   400 | 78.7 |
 
