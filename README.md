@@ -7,7 +7,7 @@ In this repo, we show how to train a self-supervised model by using [Global Cont
 
 #### git clone
 ```bash
-git clone -b pytorch https://github.com/Optimization-AI/SogCLR.git
+git clone https://github.com/Optimization-AI/SogCLR.git
 ```
 
 ### Training  
