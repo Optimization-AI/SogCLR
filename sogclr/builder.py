@@ -63,7 +63,7 @@ class SimCLR(nn.Module):
 
         return nn.Sequential(*mlp)
 
-    def dynamic_contrastive_loss(self, hidden1, hidden2, index=None, gamma=0.99, distributed=True):
+    def dynamic_contrastive_loss(self, hidden1, hidden2, index=None, gamma=0.9, distributed=True):
         # Get (normalized) hidden1 and hidden2.
         hidden1, hidden2 = F.normalize(hidden1, p=2, dim=1), F.normalize(hidden2, p=2, dim=1)
         batch_size = hidden1.shape[0]
