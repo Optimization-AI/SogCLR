@@ -209,7 +209,7 @@ def main_worker(gpu, ngpus_per_node, args):
     print("=> creating model '{}'".format(args.arch))
     model = sogclr.builder.SimCLR_ResNet(
             partial(torchvision_models.__dict__[args.arch], zero_init_residual=True), 
-            args.dim, args.mlp_dim, args.t, cifar_head=('cifar' in args.data_name), loss_type=args.loss_type, N=data_size, num_proj_layers=args.num_proj_layers)
+            args.dim, args.mlp_dim, args.t, loss_type=args.loss_type, N=data_size, num_proj_layers=args.num_proj_layers)
 
     # infer learning rate before changing batch size
     if args.learning_rate_scaling == 'linear':
