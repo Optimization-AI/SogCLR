@@ -53,7 +53,9 @@ The following results are linear evaluation accuracy on ImageNet1K validation da
 
 | Method | BatchSize |Epoch | Linear eval. |
 |:----------:|:--------:|:--------:|:--------:|
+| SimCLR | 256   |   800 | 66.5 |
 | SogCLR | 256   |   800 | 68.4 |
+
 
 
 
