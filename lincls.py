@@ -13,14 +13,18 @@ import os
 import random
 import shutil
 import time
+import numpy as np
 import warnings
 
 import torch
 import torch.nn as nn
 import torch.nn.parallel
 import torch.backends.cudnn as cudnn
+import torch.distributed as dist
 import torch.optim
+import torch.multiprocessing as mp
 import torch.utils.data
+import torch.utils.data.distributed
 import torchvision.transforms as transforms
 import torchvision.datasets as datasets
 import torchvision.models as torchvision_models
@@ -32,8 +36,8 @@ torchvision_model_names = sorted(name for name in torchvision_models.__dict__
 
 model_names = torchvision_model_names
 
-parser = argparse.ArgumentParser(description='PyTorch CIFAR Training')
-parser.add_argument('--data', metavar='DIR', default='./data/',
+parser = argparse.ArgumentParser(description='PyTorch ImageNet Training')
+parser.add_argument('--data', metavar='DIR', default='/Users/zhuoning/Experiment/ICML2023/imagenet100/',
                     help='path to dataset')
 parser.add_argument('-a', '--arch', metavar='ARCH', default='resnet50',
                     choices=model_names,
@@ -64,21 +68,42 @@ parser.add_argument('--resume', default='', type=str, metavar='PATH',
                     help='path to latest checkpoint (default: none)')
 parser.add_argument('-e', '--evaluate', dest='evaluate', action='store_true',
                     help='evaluate model on validation set')
+parser.add_argument('--world-size', default=-1, type=int,
+                    help='number of nodes for distributed training')
+parser.add_argument('--rank', default=-1, type=int,
+                    help='node rank for distributed training')
+parser.add_argument('--dist-url', default='tcp://224.66.41.62:23456', type=str,
+                    help='url used to set up distributed training')
+parser.add_argument('--dist-backend', default='nccl', type=str,
+                    help='distributed backend')
 parser.add_argument('--seed', default=None, type=int,
                     help='seed for initializing training. ')
 parser.add_argument('--gpu', default=None, type=int,
                     help='GPU id to use.')
+parser.add_argument('--multiprocessing-distributed', action='store_true',
+                    help='Use multi-processing distributed training to launch '
+                         'N processes per node, which has N GPUs. This is the '
+                         'fastest way to use PyTorch for either single node or '
+                         'multi node data parallel training')
 
 # additional configs:
 parser.add_argument('--pretrained', default='', type=str,
-                    help='path to moco pretrained checkpoint')
+                    help='path to sogclr pretrained checkpoint')
 
 # dataset 
-parser.add_argument('--data_name', default='cifar10', type=str) 
+parser.add_argument('--data_name', default='imagenet1000', type=str) 
 parser.add_argument('--save_dir', default='./saved_models/', type=str) 
+
 
 best_acc1 = 0
 
+def set_all_seeds(SEED):
+    # REPRODUCIBILITY
+    torch.manual_seed(SEED)
+    np.random.seed(SEED)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    
 def main():
     args = parser.parse_args()
 
@@ -95,42 +120,73 @@ def main():
     if args.gpu is not None:
         warnings.warn('You have chosen a specific GPU. This will completely '
                       'disable data parallelism.')
-        
+
+    if args.dist_url == "env://" and args.world_size == -1:
+        args.world_size = int(os.environ["WORLD_SIZE"])
+
+    args.distributed = args.world_size > 1 or args.multiprocessing_distributed
+
     ngpus_per_node = torch.cuda.device_count()
-    main_worker(args.gpu, ngpus_per_node, args)
+    if args.multiprocessing_distributed:
+        # Since we have ngpus_per_node processes per node, the total world_size
+        # needs to be adjusted accordingly
+        args.world_size = ngpus_per_node * args.world_size
+        # Use torch.multiprocessing.spawn to launch distributed processes: the
+        # main_worker process function
+        mp.spawn(main_worker, nprocs=ngpus_per_node, args=(ngpus_per_node, args))
+    else:
+        # Simply call main_worker function
+        main_worker(args.gpu, ngpus_per_node, args)
+
 
 def main_worker(gpu, ngpus_per_node, args):
     global best_acc1
     args.gpu = gpu
 
+    # suppress printing if not master
+    if args.multiprocessing_distributed and args.gpu != 0:
+        def print_pass(*args):
+            pass
+        builtins.print = print_pass
+
     if args.gpu is not None:
         print("Use GPU: {} for training".format(args.gpu))
 
+    if args.distributed:
+        if args.dist_url == "env://" and args.rank == -1:
+            args.rank = int(os.environ["RANK"])
+        if args.multiprocessing_distributed:
+            # For multiprocessing distributed training, rank needs to be the
+            # global rank among all the processes
+            args.rank = args.rank * ngpus_per_node + gpu
+        dist.init_process_group(backend=args.dist_backend, init_method=args.dist_url,
+                                world_size=args.world_size, rank=args.rank)
+        torch.distributed.barrier()
+        
     # create model
+    set_all_seeds(123)
     print("=> creating model '{}'".format(args.arch))
-    model = torchvision_models.__dict__[args.arch]()
-    linear_keyword = 'fc'
-
-    if args.data_name == 'cifar10':
-         num_classes = 10
-    elif args.data_name == 'cifar100' : 
+    if args.arch.startswith('vit'):
+        model = sogclr.vits.__dict__[args.arch]()
+        linear_keyword = 'head'
+    else:
+        model = torchvision_models.__dict__[args.arch]()
+        linear_keyword = 'fc'
+        
+    if args.data_name == 'imagenet100': 
          num_classes = 100
+    elif args.data_name == 'imagenet1000': 
+         num_classes = 1000
     else:
         return 
     print ('Dataset: %s' %args.data_name)
    
-    # NEW!
-    # remove default fc layer and add new fc layer with customized num classes
+
+    # remove original fc and add fc with customized num_classes
     hidden_dim = model.fc.weight.shape[1]
-    del model.fc 
+    del model.fc  # remove original fc layer
     model.fc = nn.Linear(hidden_dim, num_classes, bias=True)
-    
-    # NEW!
-    # change cifar head for resnet
-    if 'cifar' in args.data_name:
-        model.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
-        model.maxpool = nn.Identity()
-        print ('Cifar head:', 'cifar' in args.data_name)
+    print (model)
 
     # freeze all layers but the last fc
     for name, param in model.named_parameters():
@@ -147,13 +203,13 @@ def main_worker(gpu, ngpus_per_node, args):
             print("=> loading checkpoint '{}'".format(args.pretrained))
             checkpoint = torch.load(args.pretrained, map_location="cpu")
 
-            # rename moco pre-trained keys
+            # rename sogclr pre-trained keys
             state_dict = checkpoint['state_dict']
             for k in list(state_dict.keys()):
                 # retain only base_encoder up to before the embedding layer
-                if k.startswith('base_encoder') and not k.startswith('base_encoder.%s' % linear_keyword):
+                if k.startswith('module.base_encoder') and not k.startswith('module.base_encoder.%s' % linear_keyword):
                     # remove prefix
-                    state_dict[k[len("base_encoder."):]] = state_dict[k]
+                    state_dict[k[len("module.base_encoder."):]] = state_dict[k]
                 # delete renamed or unused k
                 del state_dict[k]
 
@@ -170,6 +226,24 @@ def main_worker(gpu, ngpus_per_node, args):
 
     if not torch.cuda.is_available():
         print('using CPU, this will be slow')
+    elif args.distributed:
+        # For multiprocessing distributed, DistributedDataParallel constructor
+        # should always set the single device scope, otherwise,
+        # DistributedDataParallel will use all available devices.
+        if args.gpu is not None:
+            torch.cuda.set_device(args.gpu)
+            model.cuda(args.gpu)
+            # When using a single GPU per process and per
+            # DistributedDataParallel, we need to divide the batch size
+            # ourselves based on the total number of GPUs we have
+            args.batch_size = int(args.batch_size / args.world_size)
+            args.workers = int((args.workers + ngpus_per_node - 1) / ngpus_per_node)
+            model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu])
+        else:
+            model.cuda()
+            # DistributedDataParallel will divide and allocate batch_size to all
+            # available GPUs if device_ids are not set
+            model = torch.nn.parallel.DistributedDataParallel(model)
     elif args.gpu is not None:
         torch.cuda.set_device(args.gpu)
         model = model.cuda(args.gpu)
@@ -195,12 +269,15 @@ def main_worker(gpu, ngpus_per_node, args):
     
     # NEW!
     # save log
-    save_root_path = args.save_dir 
+    save_root_path = args.save_dir
+    global_batch_size = args.batch_size*args.world_size
+    # check this if checkpoint is located in the current directory
     fold_name = args.pretrained.split('/')[-2]
     logdir = 'linear_eval_%s'%(fold_name) 
-    summary_writer = SummaryWriter(log_dir=os.path.join(save_root_path, logdir))
+    summary_writer = SummaryWriter(log_dir=os.path.join(save_root_path, logdir)) if args.rank == 0 else None
     print (logdir)
 
+    
     # optionally resume from a checkpoint
     if args.resume:
         if os.path.isfile(args.resume):
@@ -227,58 +304,55 @@ def main_worker(gpu, ngpus_per_node, args):
 
 
     # Data loading code
-    mean = {'cifar10':      [0.4914, 0.4822, 0.4465],
-            'cifar100':     [0.4914, 0.4822, 0.4465] 
+    mean = {'imagenet100':  [0.485, 0.456, 0.406],
+            'imagenet1000': [0.485, 0.456, 0.406],
             }[args.data_name]
-    std = {'cifar10':      [0.2470, 0.2435, 0.2616],
-            'cifar100':     [0.2470, 0.2435, 0.2616]
+    std = {'imagenet100':   [0.229, 0.224, 0.225],
+           'imagenet1000': [0.229, 0.224, 0.225],
             }[args.data_name]
 
 
-    image_size = {'cifar10':32, 'cifar100':32}[args.data_name]
+    image_size = {'imagenet100':224, 'imagenet1000':224}[args.data_name]
     normalize = transforms.Normalize(mean=mean, std=std)
-    
-    if args.data_name == 'cifar10':
-        DATA_ROOT = args.data
-        train_dataset = datasets.CIFAR10(root=DATA_ROOT, train=True, download=True, transform=transforms.Compose([
-                                                                                            transforms.RandomResizedCrop(32),
-                                                                                            transforms.RandomHorizontalFlip(),
-                                                                                            transforms.ToTensor(),
-                                                                                            normalize,]))
-    elif args.data_name == 'cifar100':
-        DATA_ROOT = args.data
-        train_dataset = datasets.CIFAR100(root=DATA_ROOT, train=True, download=True, transform=transforms.Compose([
-                                                                                            transforms.RandomResizedCrop(32),
-                                                                                            transforms.RandomHorizontalFlip(),
-                                                                                            transforms.ToTensor(),
-                                                                                            normalize,]))
+
+    if args.data_name == 'imagenet1000' or args.data_name == 'imagenet100' :
+        traindir = os.path.join(args.data, 'train')
+        valdir = os.path.join(args.data, 'val')
+        train_dataset = datasets.ImageFolder(
+            traindir,
+            transforms.Compose([
+                transforms.RandomResizedCrop(224),
+                transforms.RandomHorizontalFlip(),
+                transforms.ToTensor(),
+                normalize,
+            ]))
     else:
         raise ValueError
 
-        
-    train_sampler = None
+    if args.distributed:
+        train_sampler = torch.utils.data.distributed.DistributedSampler(train_dataset)
+    else:
+        train_sampler = None
+
     train_loader = torch.utils.data.DataLoader(
         train_dataset, batch_size=args.batch_size, shuffle=(train_sampler is None),
         num_workers=args.workers, pin_memory=True, sampler=train_sampler)
 
+
+
     # validation 
-    if args.data_name == 'cifar10':
-            DATA_ROOT = args.data
-            val_dataset = datasets.CIFAR10(root=DATA_ROOT, train=False, download=True, transform=transforms.Compose([
-                                                                                            transforms.ToTensor(),
-                                                                                            normalize,]))
+    if args.data_name == 'imagenet1000' or args.data_name == 'imagenet100' :
+           
             val_loader = torch.utils.data.DataLoader(
-                val_dataset, batch_size=1024, shuffle=False,
+                datasets.ImageFolder(valdir, transforms.Compose([
+                    transforms.Resize(256),
+                    transforms.CenterCrop(224),
+                    transforms.ToTensor(),
+                    normalize,
+                ])),
+                batch_size=256, shuffle=False,
                 num_workers=args.workers, pin_memory=True)
 
-    elif args.data_name == 'cifar100':
-            DATA_ROOT = args.data
-            val_dataset = datasets.CIFAR100(root=DATA_ROOT, train=False, download=True, transform=transforms.Compose([
-                                                                                            transforms.ToTensor(),
-                                                                                            normalize,]))
-            val_loader = torch.utils.data.DataLoader(
-                val_dataset, batch_size=1024, shuffle=False,
-                num_workers=args.workers, pin_memory=True)
     else:
         raise ValueError
 
@@ -288,7 +362,8 @@ def main_worker(gpu, ngpus_per_node, args):
         return
 
     for epoch in range(args.start_epoch, args.epochs):
-   
+        if args.distributed:
+            train_sampler.set_epoch(epoch)
         adjust_learning_rate(optimizer, init_lr, epoch, args)
 
         # train for one epoch
@@ -302,16 +377,17 @@ def main_worker(gpu, ngpus_per_node, args):
         best_acc1 = max(acc1, best_acc1)
         print (' * Best Acc@1:%.3f'%best_acc1)
 
-
-        save_checkpoint({
-                'epoch': epoch + 1,
-                'arch': args.arch,
-                'state_dict': model.state_dict(),
-                'best_acc1': best_acc1,
-                'optimizer' : optimizer.state_dict(),
-            }, is_best, filename=os.path.join(save_root_path, logdir, 'checkpoint.pth.tar'), save_path=os.path.join(save_root_path, logdir))
-        #if epoch == args.start_epoch:
-        #   sanity_check(model.state_dict(), args.pretrained, linear_keyword)
+        #if not args.multiprocessing_distributed or (args.multiprocessing_distributed
+        #        and args.rank == 0): # only the first GPU saves checkpoint
+        #    save_checkpoint({
+        #        'epoch': epoch + 1,
+        #        'arch': args.arch,
+        #        'state_dict': model.state_dict(),
+        #        'best_acc1': best_acc1,
+        #        'optimizer' : optimizer.state_dict(),
+        #    }, is_best, filename=os.path.join(save_root_path, logdir, 'checkpoint.pth.tar'), save_path=os.path.join(save_root_path, logdir))
+        #    if epoch == args.start_epoch:
+        #        sanity_check(model.state_dict(), args.pretrained, linear_keyword)
 
 
 def train(train_loader, model, criterion, optimizer, epoch, args):
@@ -345,7 +421,7 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
             target = target.cuda(args.gpu, non_blocking=True)
 
         # compute output
-        output = model(images)
+        output = model(images)[0] # after modifying resnet forward #torch.Size([1024, 1000]) torch.Size([1024, 2048])
         loss = criterion(output, target)
 
         # measure accuracy and record loss
@@ -389,7 +465,7 @@ def validate(val_loader, model, criterion, args):
                 target = target.cuda(args.gpu, non_blocking=True)
 
             # compute output
-            output = model(images)
+            output = model(images)[0]
             loss = criterion(output, target)
 
             # measure accuracy and record loss

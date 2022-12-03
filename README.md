@@ -1,57 +1,59 @@
 # SogCLR PyTorch Implementation
 
-In this repo, you will learn how to train a self-supervised model by using [Global Contrastive Loss](https://arxiv.org/abs/2202.12387) (GCL) on CIFAR10/CIFAR100. The original GCL was implementated in Tensorflow and run in TPUs. This repo re-implements GCL in PyTorch and GPUs based on [moco's](https://github.com/facebookresearch/moco) codebase. We recommend users to run this notebook on a GPU-enabled environment, e.g., [Google Colab](https://colab.research.google.com/). 
+In this repo, we show how to train a self-supervised model by using [Global Contrastive Loss](https://arxiv.org/abs/2202.12387) (GCL) on [ImageNet](https://image-net.org/). The original GCL was implementated in Tensorflow and run in TPUs. This repo re-implements GCL in PyTorch based on [moco's](https://github.com/facebookresearch/moco). We recommend users to run this codebase on GPU-enabled environments, such as [Google Cloud](https://cloud.google.com/), [AWS](https://aws.amazon.com/).
 
 
 ## Installation
 
 #### git clone
 ```bash
-git clone -b cifar https://github.com/Optimization-AI/SogCLR.git
+git clone -b pytorch https://github.com/Optimization-AI/SogCLR.git
 ```
 
 ### Training  
-Below is an example for self-supervised pre-training of a ResNet-50 model on CIFAR10 on a single GPU. The first time you run the scripts, datasets will be automatically downloaded to `/data/`. By default, we use linear learning rate scaling, e.g., $\text{LearningRate}=1.0\times\text{BatchSize}/256$, [LARS](https://arxiv.org/abs/1708.03888) optimizer and a weight decay of 1e-4. For temperature parameter $\tau$, we use a fixed value of 0.3. For DCL, gamma (γ in the paper) is an additional parameter for maintaining moving average estimator, the default value is 0.9. By default, `CIFAR10` is used for experiments. To pretrain on CIFAR100, you can set `--data_name cifar100`. In this repo, only `CIFAR10/CIFAR100` is supported, however, you can modify the dataloader to support other datasets.
+Below is an example for self-supervised pre-training of a ResNet-50 model on ImageNet1K on a 4-GPU server. By default, we use sqrt learning rate scaling, i.e., $\text{LearningRate}=0.075\times\sqrt{\text{BatchSize}}$, [LARS](https://arxiv.org/abs/1708.03888) optimizer and a weight decay of 1e-6. For temperature parameter $\tau$, we use a fixed value $0.1$ from [SimCLR](https://arxiv.org/pdf/2002.05709.pdf). For GCL, gamma (γ in the paper) is an additional parameter for maintaining moving average estimator, the default value is $0.9$, however, it is recommended to tune this parameter in the range of $[0.1\sim 0.99]$ for better performance.
 
+**ImageNet1K**
 
-**CIFAR**
-
-We use batch size of 64 and train 400 epochs for pretraining. You can also increase the number of workers to accelerate the training speed.
+We use batch size of 256 and train 800 epochs for pretraining. You can also increase the number of workers to accelerate the training speed.
 
 ```bash
-python train.py \
-  --lr=1.0 --learning-rate-scaling=sqrt \
-  --epochs=400 --batch-size=64 \
+CUDA_VISIBLE_DEVICES=0,1,2,3 python train.py \
+  --lr=.075 --epochs=800 --batch-size=256 \
+  --learning-rate-scaling=sqrt \
   --loss_type dcl \
   --gamma 0.9 \
-  --workers 32 \
-  --wd=1e-4 \
-  --data_name cifar10 \
-  --save_dir ./saved_models/ \
+  --multiprocessing-distributed --world-size 1 --rank 0 --workers 32 \
+  --crop-min=.08 \
+  --wd=1e-6 \
+  --dist-url 'tcp://localhost:10001' \
+  --data_name imagenet1000 \
+  --data /your-data-path/imagenet1000/ \
+  --save_dir /your-data-path/saved_models/ \
   --print-freq 1000
 ```
 
 ### Linear evaluation
-By default, we use momentum-SGD without weight decay and a batch size of 1024 for linear evaluation on on frozen features/weights. In this stage, it runs 90 epochs for training.
+By default, we use momentum-SGD without weight decay and a batch size of 1024 for linear evaluation on on frozen features/weights. In this stage, it runs 90 epochs for training the classifier.
 
-**CIFAR**
+**ImageNert1K**
 
 ```bash
 python lincls.py \
-  --workers 32 \
-  --pretrained /path-to-checkpoint/checkpoint_0099.pth.tar
-  --data_name cifar10 \
-  --save_dir ./saved_models/ \
+  --dist-url 'tcp://localhost:10001' \
+  --multiprocessing-distributed --world-size 1 --rank 0 --workers 32 \
+  --pretrained /your-data-path/checkpoint_0799.pth.tar
+  --data_name imagenet1000 \
+  --save_dir /your-data-path/saved_models/ \
 ```
 
 ## Benchmarks
 
-The following results are linear evaluation accuracy on CIFAR10 testing dataset. All results are based on a batch size of 64 for 400-epoch pretraining.
+The following results are linear evaluation accuracy on ImageNet1K validation dataset for the above setting. 
 
 | Method | BatchSize |Epoch | Linear eval. |
 |:----------:|:--------:|:--------:|:--------:|
-| SimCLR | 64   |   400 |  90.66    |
-| SogCLR | 64   |   400 | 91.78  |
+| SogCLR | 256   |   800 | 68.4 |
 
 
 

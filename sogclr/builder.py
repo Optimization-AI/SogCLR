@@ -11,18 +11,14 @@ import torch.nn.functional as F
 
 class SimCLR(nn.Module):
     """
-    Build a SimCLR model with a base encoder, and two MLPs
+    Build a SimCLR-based model with a base encoder, and two MLPs
    
     """
-    def __init__(self, base_encoder, dim=256, mlp_dim=2048, T=1.0, cifar_head=False, loss_type='dcl', N=50000, num_proj_layers=2, device=None):
+    def __init__(self, base_encoder, dim=256, mlp_dim=2048, T=0.1, loss_type='dcl', N=50000, num_proj_layers=2, device=None):
         """
         dim: feature dimension (default: 256)
         mlp_dim: hidden dimension in MLPs (default: 4096)
         T: softmax temperature (default: 1.0)
-        cifar_head: special input layers for training cifar datasets (default: false)
-        loss_type: dynamatic contrastive loss (dcl) or contrastive loss (cl) (default: dcl)
-        N: number of samples in the dataset used for computing moving average (default: 50000)
-        num_proj_layers: number of non-linear projection head (default: 2)
         """
         super(SimCLR, self).__init__()
         self.T = T
@@ -34,21 +30,15 @@ class SimCLR(nn.Module):
         
         # build non-linear projection heads
         self._build_projector_and_predictor_mlps(dim, mlp_dim)
-        
-        # update input heads if image_size < 32 (e.g., cifar)
-        print ('cifar head:', cifar_head)
-        self.base_encoder.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
-        self.base_encoder.maxpool = nn.Identity()
-        
+
         # sogclr 
         if not device:
             self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         else:
             self.device = device 
         
-        if self.loss_type == 'dcl':
-            self.u = torch.zeros(N).reshape(-1, 1) #.to(self.device) 
-             
+        # for DCL
+        self.u = torch.zeros(N).reshape(-1, 1) #.to(self.device) 
         self.LARGE_NUM = 1e9
 
 
@@ -78,10 +68,21 @@ class SimCLR(nn.Module):
         hidden1, hidden2 = F.normalize(hidden1, p=2, dim=1), F.normalize(hidden2, p=2, dim=1)
         batch_size = hidden1.shape[0]
         
-        hidden1_large = hidden1
-        hidden2_large = hidden2
-        labels = F.one_hot(torch.arange(batch_size, dtype=torch.long), batch_size * 2).to(self.device) 
-        masks  = F.one_hot(torch.arange(batch_size, dtype=torch.long), batch_size).to(self.device) 
+        # Gather hidden1/hidden2 across replicas and create local labels.
+        if distributed:  
+           hidden1_large = torch.cat(all_gather_layer.apply(hidden1), dim=0) # why concat_all_gather()
+           hidden2_large =  torch.cat(all_gather_layer.apply(hidden2), dim=0)
+           enlarged_batch_size = hidden1_large.shape[0]
+
+           labels_idx = (torch.arange(batch_size, dtype=torch.long) + batch_size  * torch.distributed.get_rank()).to(self.device) 
+           labels = F.one_hot(labels_idx, enlarged_batch_size*2).to(self.device) 
+           masks  = F.one_hot(labels_idx, enlarged_batch_size).to(self.device) 
+           batch_size = enlarged_batch_size
+        else:
+           hidden1_large = hidden1
+           hidden2_large = hidden2
+           labels = F.one_hot(torch.arange(batch_size, dtype=torch.long), batch_size * 2).to(self.device) 
+           masks  = F.one_hot(torch.arange(batch_size, dtype=torch.long), batch_size).to(self.device) 
 
         logits_aa = torch.matmul(hidden1, hidden1_large.T)
         logits_aa = logits_aa - masks * self.LARGE_NUM
@@ -92,16 +93,27 @@ class SimCLR(nn.Module):
 
         #  SogCLR
         neg_mask = 1-labels
-        logits_ab_aa = torch.cat([logits_ab, logits_aa ], 1) 
-        logits_ba_bb = torch.cat([logits_ba, logits_bb ], 1) 
+        logits_ab_aa = torch.cat([logits_ab, logits_aa ], 1)
+        logits_ba_bb = torch.cat([logits_ba, logits_bb ], 1)
       
-        neg_logits1 = torch.exp(logits_ab_aa/self.T)*neg_mask   #(B, 2B)
-        neg_logits2 = torch.exp(logits_ba_bb/self.T)*neg_mask
+        neg_logits1 = torch.exp(logits_ab_aa /self.T)*neg_mask   #(B, 2B)
+        neg_logits2 = torch.exp(logits_ba_bb /self.T)*neg_mask
 
+        # u init    
+        if self.u[index].sum() == 0:
+            gamma = 1
+            
         u1 = (1 - gamma) * self.u[index].cuda() + gamma * torch.sum(neg_logits1, dim=1, keepdim=True)/(2*(batch_size-1))
         u2 = (1 - gamma) * self.u[index].cuda() + gamma * torch.sum(neg_logits2, dim=1, keepdim=True)/(2*(batch_size-1))
-        
-        self.u[index] = u1.detach().cpu()+ u2.detach().cpu()
+
+        # this sync on all devices (since "hidden" are gathering from all devices)
+        if distributed:
+           u1_large = concat_all_gather(u1)
+           u2_large = concat_all_gather(u2)
+           index_large = concat_all_gather(index)
+           self.u[index_large] =  u1_large.detach().cpu() + u2_large.detach().cpu() 
+        else:
+           self.u[index] = u1.detach().cpu() + u2.detach().cpu()
 
         p_neg_weights1 = (neg_logits1/u1).detach()
         p_neg_weights2 = (neg_logits2/u2).detach()
@@ -117,46 +129,20 @@ class SimCLR(nn.Module):
 
         return loss
     
-    def contrastive_loss(self, hidden1, hidden2, index=None, gamma=None, distributed=True):
-        # Get (normalized) hidden1 and hidden2.
-        hidden1, hidden2 = F.normalize(hidden1, p=2, dim=1), F.normalize(hidden2, p=2, dim=1)
-        batch_size = hidden1.shape[0]
-       
-        hidden1_large = hidden1
-        hidden2_large = hidden2
-        labels = F.one_hot(torch.arange(batch_size, dtype=torch.long), batch_size * 2).to(self.device) 
-        masks  = F.one_hot(torch.arange(batch_size, dtype=torch.long), batch_size).to(self.device) 
-
-        logits_aa = torch.matmul(hidden1, hidden1_large.T)/ self.T
-        logits_aa = logits_aa - masks * self.LARGE_NUM
-        logits_bb = torch.matmul(hidden2, hidden2_large.T)/ self.T
-        logits_bb = logits_bb - masks * self.LARGE_NUM
-        logits_ab = torch.matmul(hidden1, hidden2_large.T)/ self.T
-        logits_ba = torch.matmul(hidden2, hidden1_large.T)/ self.T
-
-        logits_ab_aa = torch.cat([logits_ab, logits_aa ], 1) 
-        logits_ba_bb = torch.cat([logits_ba, logits_bb ], 1) 
-
-        def softmax_cross_entropy_with_logits(labels, logits):
-            #logits = logits - torch.max(logits)
-            expsum_neg_logits = torch.sum(torch.exp(logits), dim=1, keepdim=True)
-            normalized_logits = logits - torch.log(expsum_neg_logits)
-            return -torch.sum(labels * normalized_logits, dim=1)
-
-        loss_a = softmax_cross_entropy_with_logits(labels, logits_ab_aa)
-        loss_b = softmax_cross_entropy_with_logits(labels, logits_ba_bb)
-        loss = (loss_a + loss_b).mean()
-        return loss
-    
     def forward(self, x1, x2, index, gamma):
+        """
+        Input:
+            x1: first views of images
+            x2: second views of images
+            index: index of image
+            gamma: moving average of sogclr 
+        Output:
+            loss
+        """
         # compute features
         h1 = self.base_encoder(x1)
         h2 = self.base_encoder(x2)
-
-        if self.loss_type == 'dcl':
-           loss = self.dynamic_contrastive_loss(h1, h2, index, gamma) 
-        elif self.loss_type == 'cl':   
-           loss = self.contrastive_loss(h1, h2)
+        loss = self.dynamic_contrastive_loss(h1, h2, index, gamma) 
         return loss
 
 
@@ -166,5 +152,39 @@ class SimCLR_ResNet(SimCLR):
         del self.base_encoder.fc  # remove original fc layer
             
         # projectors
+        # TODO: increase number of mlp layers 
         self.base_encoder.fc = self._build_mlp(num_proj_layers, hidden_dim, mlp_dim, dim)
-   
+       
+
+
+# utils
+@torch.no_grad()
+def concat_all_gather(tensor):
+    """
+    Performs all_gather operation on the provided tensors.
+    *** Warning ***: torch.distributed.all_gather has no gradient.
+    """
+    tensors_gather = [torch.ones_like(tensor)
+        for _ in range(torch.distributed.get_world_size())]
+    torch.distributed.all_gather(tensors_gather, tensor, async_op=False)
+
+    output = torch.cat(tensors_gather, dim=0)
+    return output
+
+
+class all_gather_layer(torch.autograd.Function):
+    """Gather tensors from all process, supporting backward propagation."""
+
+    @staticmethod
+    def forward(ctx, input):
+        ctx.save_for_backward(input)
+        output = [torch.zeros_like(input) for _ in range(torch.distributed.get_world_size())]
+        torch.distributed.all_gather(output, input)
+        return tuple(output)
+
+    @staticmethod
+    def backward(ctx, *grads):
+        (input,) = ctx.saved_tensors
+        grad_out = torch.zeros_like(input)
+        grad_out[:] = grads[torch.distributed.get_rank()]
+        return grad_out
