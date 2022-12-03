@@ -16,7 +16,7 @@ Below is an example for self-supervised pre-training of a ResNet-50 model on Ima
 
 **ImageNet1K**
 
-We use batch size of 256 and train 800 epochs for pretraining. You can also increase the number of workers to accelerate the training speed. 
+We use a batch size of 256 and pretrain ResNet-50 for 800 epochs. You can also increase the number of workers to accelerate the training speed. 
 
 ```bash
 CUDA_VISIBLE_DEVICES=0,1,2,3 python train.py \
@@ -42,7 +42,7 @@ We also used a small version of ImageNet1K for experiments, i.e., ImageNet-100 i
 * Run this [script](https://raw.githubusercontent.com/soumith/imagenetloader.torch/master/valprep.sh) to create/move all validation images to each category (class) folder
 * Copy images from [train/val.txt](https://github.com/Optimization-AI/SogCLR/blob/main/dataset/ImageNet-S/train.txt) to generate ImageNet-100
 
-We use batch size of 256 and train 400 epochs for pretraining.
+We use a batch size of 256 and pretrain ResNet-50 for 400 epochs.
 
 ```bash
 CUDA_VISIBLE_DEVICES=0,1,2,3 python train.py \
