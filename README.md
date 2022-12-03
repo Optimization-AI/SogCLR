@@ -49,7 +49,7 @@ python lincls.py \
 
 ## Benchmarks
 
-The following results are linear evaluation accuracy on ImageNet1K validation data using the above training configuration. 
+The following results are linear evaluation accuracy on ImageNet1K validation data using the above training configuration. For original results, please refer to Tensorflow implementation [here](https://github.com/Optimization-AI/SogCLR/tree/Tensorflow). 
 
 | Method | BatchSize |Epoch | Linear eval. |
 |:----------:|:--------:|:--------:|:--------:|
