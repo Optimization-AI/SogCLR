@@ -111,9 +111,9 @@ class SimCLR(nn.Module):
            u1_large = concat_all_gather(u1)
            u2_large = concat_all_gather(u2)
            index_large = concat_all_gather(index)
-           self.u[index_large] =  u1_large.detach().cpu() + u2_large.detach().cpu() 
+           self.u[index_large] = (u1_large.detach().cpu() + u2_large.detach().cpu())/2 
         else:
-           self.u[index] = u1.detach().cpu() + u2.detach().cpu()
+           self.u[index] = (u1.detach().cpu() + u2.detach().cpu())/2 
 
         p_neg_weights1 = (neg_logits1/u1).detach()
         p_neg_weights2 = (neg_logits2/u2).detach()
