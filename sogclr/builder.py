@@ -101,7 +101,7 @@ class SimCLR(nn.Module):
         u1 = (1 - gamma) * self.u[index].cuda() + gamma * torch.sum(neg_logits1, dim=1, keepdim=True)/(2*(batch_size-1))
         u2 = (1 - gamma) * self.u[index].cuda() + gamma * torch.sum(neg_logits2, dim=1, keepdim=True)/(2*(batch_size-1))
         
-        self.u[index] = u1.detach().cpu()+ u2.detach().cpu()
+        self.u[index] = (u1.detach().cpu()+ u2.detach().cpu())/2
 
         p_neg_weights1 = (neg_logits1/u1).detach()
         p_neg_weights2 = (neg_logits2/u2).detach()
