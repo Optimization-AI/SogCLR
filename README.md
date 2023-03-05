@@ -71,21 +71,24 @@ python lincls.py \
   --multiprocessing-distributed --world-size 1 --rank 0 --workers 32 \
   --pretrained /your-data-path/checkpoint_0799.pth.tar
   --data_name imagenet1000 \
+  --data /your-data-path/imagenet1000/ \
   --save_dir /your-data-path/saved_models/ \
 ```
 
 ## Benchmarks
 
-The following results are linear evaluation accuracy on **ImageNet1K** validation data using the above training configuration.
+The following results are linear evaluation results on **ImageNet1K** validation set:
 
 | Method | BatchSize |Epoch | Linear eval. |
 |:----------:|:--------:|:--------:|:--------:|
 | SimCLR (TF[^2]) | 256   |   800 | 66.5 |
-| SogCLR (PT[^1]) | 256   |   800 | 68.4 |
+| SogCLR (PT[^1]) | 256   |   800 | 69.0 |
 | SogCLR (TF[^2]) | 256   |   800 | 69.3 |
 
+*SogCLR (PT[^1]): pre-trained ResNet-50 checkpoint & linear evaluation training log can be downloaded here: [[checkpoint_0799.pth.tar](https://drive.google.com/file/d/1baWWT6Xf9ylLHimWXZuhvdiKUkkMLB0_/view?usp=sharing) | [linear_eval.txt](https://drive.google.com/file/d/1O2N90Ffk0Oz6dXek_MhEVgXzszaogfvy/view?usp=sharing)]
 
-The following results are linear evaluation accuracy on **ImageNet-100** validation data using the above training configuration.
+
+The following results are linear evaluation results on **ImageNet-100** validation set:
 
 | Method | BatchSize |Epoch | Linear eval. |
 |:----------:|:--------:|:--------:|:--------:|
@@ -93,8 +96,8 @@ The following results are linear evaluation accuracy on **ImageNet-100** validat
 | SogCLR (PT[^1]) | 256   |   400 | 80.0 |
 | SogCLR (TF[^2]) | 256   |   400 | 78.7 |
 
-[^1]:PyTorch (PT) version is based on [moco's](https://github.com/facebookresearch/moco) codebase.
-[^2]:Tensorflow (TF) version is based on [SimCLR's](https://github.com/google-research/simclr/tree/master/tf2) codebase.
+[^1]: PyTorch (PT) is based on [MoCo's](https://github.com/facebookresearch/moco) codebase.
+[^2]: Tensorflow (TF) is based on [SimCLR's](https://github.com/google-research/simclr/tree/master/tf2) codebase.
 
 The following results are the comparsion of SogCLR and SimCLR using different batch sizes for 800-epoch pretraining on ImageNet-1K. 
 
