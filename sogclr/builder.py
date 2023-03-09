@@ -100,20 +100,20 @@ class SimCLR(nn.Module):
         neg_logits2 = torch.exp(logits_ba_bb /self.T)*neg_mask
 
         # u init    
-        if self.u[index].sum() == 0:
+        if self.u[index.cpu()].sum() == 0:
             gamma = 1
             
-        u1 = (1 - gamma) * self.u[index].cuda() + gamma * torch.sum(neg_logits1, dim=1, keepdim=True)/(2*(batch_size-1))
-        u2 = (1 - gamma) * self.u[index].cuda() + gamma * torch.sum(neg_logits2, dim=1, keepdim=True)/(2*(batch_size-1))
+        u1 = (1 - gamma) * self.u[index.cpu()].cuda() + gamma * torch.sum(neg_logits1, dim=1, keepdim=True)/(2*(batch_size-1))
+        u2 = (1 - gamma) * self.u[index.cpu()].cuda() + gamma * torch.sum(neg_logits2, dim=1, keepdim=True)/(2*(batch_size-1))
 
         # this sync on all devices (since "hidden" are gathering from all devices)
         if distributed:
            u1_large = concat_all_gather(u1)
            u2_large = concat_all_gather(u2)
            index_large = concat_all_gather(index)
-           self.u[index_large] = (u1_large.detach().cpu() + u2_large.detach().cpu())/2 
+           self.u[index_large.cpu()] = (u1_large.detach().cpu() + u2_large.detach().cpu())/2 
         else:
-           self.u[index] = (u1.detach().cpu() + u2.detach().cpu())/2 
+           self.u[index.cpu()] = (u1.detach().cpu() + u2.detach().cpu())/2 
 
         p_neg_weights1 = (neg_logits1/u1).detach()
         p_neg_weights2 = (neg_logits2/u2).detach()
