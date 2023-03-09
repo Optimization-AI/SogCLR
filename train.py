@@ -266,7 +266,7 @@ def main_worker(gpu, ngpus_per_node, args):
     save_root_path = args.save_dir
     global_batch_size = args.batch_size*args.world_size
     method_name = {'dcl': 'sogclr'}[args.loss_type]
-    logdir = '20221005_%s_%s_%s-%s-%s_bz_%s_E%s_WR%s_lr_%.3f_%s_wd_%s_t_%s_g_%s_m_%s_%s'%(args.data_name, args.arch, method_name, args.dim, args.mlp_dim, global_batch_size, args.epochs, args.warmup_epochs, args.lr, args.learning_rate_scaling, args.weight_decay, args.t, args.gamma, args.margin, args.optimizer )
+    logdir = '20221005_%s_%s_%s-%s-%s_bz_%s_E%s_WR%s_lr_%.3f_%s_wd_%s_t_%s_g_%s_%s'%(args.data_name, args.arch, method_name, args.dim, args.mlp_dim, global_batch_size, args.epochs, args.warmup_epochs, args.lr, args.learning_rate_scaling, args.weight_decay, args.t, args.gamma, args.optimizer )
     summary_writer = SummaryWriter(log_dir=os.path.join(save_root_path, logdir))
     print (logdir)
     
@@ -391,7 +391,6 @@ def train(train_loader, model, optimizer, scaler, summary_writer, epoch, args):
             images[0] = images[0].cuda(args.gpu, non_blocking=True)
             images[1] = images[1].cuda(args.gpu, non_blocking=True)
 
-        
         # compute output
         with torch.cuda.amp.autocast(True):
             loss = model(images[0], images[1], index, args.gamma)
