@@ -2,6 +2,9 @@
 
 In this repo, we show how to train a self-supervised model by using [Global Contrastive Loss](https://arxiv.org/abs/2202.12387) (GCL) on [ImageNet](https://image-net.org/). The original GCL was implementated in Tensorflow and run in TPUs [here](https://github.com/Optimization-AI/SogCLR/tree/Tensorflow). This repo **re-implements** GCL in PyTorch based on [moco's](https://github.com/facebookresearch/moco) codebase. We recommend users to run this codebase on GPU-enabled environments, such as [Google Cloud](https://cloud.google.com/), [AWS](https://aws.amazon.com/).
 
+## What's new
+- 2023.03.05 Fixed `RuntimeError` related to variable `u`
+- 2023.03.05 Fixed `AttributeError` related to `margin`
 
 ## Installation
 
